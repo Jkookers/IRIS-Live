@@ -39,7 +39,7 @@ import matplotlib.pyplot as plt
 class GetLiveThread(QThread):
     
     #   Signals from thread class to feed back into the main app
-    updateWave = pyqtSignal(Stream,float,float,float)
+    updateWave = pyqtSignal(Stream,float,float,float, str)
     updateLogger = pyqtSignal(str)
     
     #   Define initial variables 
@@ -111,10 +111,10 @@ class GetLiveThread(QThread):
             print(t + " Z: " + str(alpha_Z) + " N: " + str(alpha_N) + " E: " + str(alpha_E))
             
             #   Generate the logger text
-            logger += "\n" + t + '\t\t' + str('%.5f' % (round(alpha_Z,5))) + '\t\t' + str('%.5f' % (round(alpha_N,5))) + '\t\t' + str('%.5f' % (round(alpha_E,5)))
+            logger += "\n" + t + '\t\t' + str('%.5f' % (round((alpha_Z - 90),5))) + '\t\t' + str('%.5f' % (round(-1*alpha_N,5))) + '\t\t' + str('%.5f' % (round(-1*alpha_E,5)))
             
             #   Send signal
-            self.updateWave.emit(st, alpha_Z, alpha_N, alpha_E)
+            self.updateWave.emit(st, alpha_Z, alpha_N, alpha_E, gettimeNow.strftime('%H:%M:%S'))
             self.updateLogger.emit(logger)
             
             #   Set newest time for update loop
@@ -248,6 +248,7 @@ class Ui_Form(object):
         self.ytilt = QtWidgets.QLabel(self.groupBox_4)
         self.ytilt.setObjectName("ytilt")
         self.gridLayout_4.addWidget(self.ytilt, 1, 1, 1, 1)
+        
         self.label_3 = QtWidgets.QLabel(self.groupBox_4)
         font = QtGui.QFont()
         font.setBold(True)
@@ -258,6 +259,17 @@ class Ui_Form(object):
         self.ztilt = QtWidgets.QLabel(self.groupBox_4)
         self.ztilt.setObjectName("ztilt")
         self.gridLayout_4.addWidget(self.ztilt, 2, 1, 1, 1)
+        
+        self.label_5 = QtWidgets.QLabel(self.groupBox_4)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_5.setFont(font)
+        self.label_5.setObjectName('label_5')
+        self.gridLayout_4.addWidget(self.label_5, 3, 0, 1, 1)
+        self.ttime = QtWidgets.QLabel(self.groupBox_4)
+        self.ttime.setObjectName("ttime")
+        self.gridLayout_4.addWidget(self.ttime, 3, 1, 1, 1)
         self.gridLayout_5.addWidget(self.groupBox_4, 0, 0, 1, 1)
         self.gridLayout.addWidget(self.groupBox_2, 1, 0, 1, 1)
         self.groupBox = QtWidgets.QGroupBox(Form)
@@ -339,7 +351,7 @@ class Ui_Form(object):
         self.writer = True
         self.worker_thread.terminate()
     
-    def Plotter(self, stWave, alpha_Z, alpha_N, alpha_E):   
+    def Plotter(self, stWave, alpha_Z, alpha_N, alpha_E, t):   
         #   Generate the tilt plot
         #   Define the figure
         self.ax1.clear()
@@ -348,7 +360,7 @@ class Ui_Form(object):
 
         #   Z-channel tiltmeter
         self.ax1.plot(0,1)
-        self.ax1.arrow(float(alpha_Z)/180*np.pi,0,0,0.82,
+        self.ax1.arrow(float(-1*alpha_Z)/180*np.pi,0,0,0.82,
                               width = 0.05, edgecolor = 'black', facecolor = 'blue', lw = 2, zorder = 2)
         self.ax1.set_theta_direction(-1)
         self.ax1.set_theta_zero_location("E")
@@ -361,7 +373,7 @@ class Ui_Form(object):
         
         #   N-channel tiltmeter
         self.ax2.plot(0,1)
-        self.ax2.arrow(float(alpha_N)/180*np.pi,0,0,0.82,
+        self.ax2.arrow(float(-1*alpha_N)/180*np.pi,0,0,0.82,
                               width = 0.05, edgecolor = 'black', facecolor = 'blue', lw = 2, zorder = 2)
         self.ax2.set_theta_direction(-1)
         self.ax2.set_theta_zero_location("E")
@@ -374,7 +386,7 @@ class Ui_Form(object):
         
         #   E-channel tiltmeter
         self.ax3.plot(0,1)
-        self.ax3.arrow(float(alpha_E)/180*np.pi,0,0,0.82,
+        self.ax3.arrow(float(-1*alpha_E)/180*np.pi,0,0,0.82,
                              width = 0.05, edgecolor = 'black', facecolor = 'blue', lw = 2, zorder = 2)
         self.ax3.set_theta_direction(-1)
         self.ax3.set_theta_zero_location("E")
@@ -391,9 +403,10 @@ class Ui_Form(object):
         self.ax3.figure.canvas.draw()
         
         #   Show the analog tilt update
-        self.xtilt.setText(str('%.4f' % round(alpha_Z,4)))
-        self.ytilt.setText(str('%.4f' % round(alpha_N,4)))
-        self.ztilt.setText(str('%.4f' % round(alpha_E,4)))
+        self.xtilt.setText(str('%.4f' % round(-90 + alpha_Z,4)))
+        self.ytilt.setText(str('%.4f' % round(-1*alpha_N,4)))
+        self.ztilt.setText(str('%.4f' % round(-1*alpha_E,4)))
+        self.ttime.setText(t)
         
         #   Draw the obspy figure
         self.LiveWaveFigure.clf()
@@ -418,6 +431,7 @@ class Ui_Form(object):
         self.label_2.setText(_translate("Form", "Z-Channel:"))
         self.label_4.setText(_translate("Form", "N-Channel:"))
         self.label_3.setText(_translate("Form", "E-Channel:"))
+        self.label_5.setText(_translate("Form", "Time:"))
         self.groupBox.setTitle(_translate("Form", "Live Waveform Data"))
 
 
